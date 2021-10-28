@@ -23,4 +23,10 @@ class ApiTester extends \Codeception\Actor
     /**
      * Define custom actions here
      */
+    function seeJSONResponseWithCodeAndContent(int $code, string $text) {
+
+        $this->seeResponseCodeIs($code);
+        $this->seeResponseIsJson();
+        $this->seeResponseContains($text);
+    }
 }

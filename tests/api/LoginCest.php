@@ -19,21 +19,24 @@ class LoginCest {
         $this->validEmailAddress = $faker->email();
         $this->validPassword = $faker->password();
         $hasher = $I->grabService('security.user_password_hasher');
+
         $I->haveInRepository(
             User::class,
             [
                 'firstName' => $faker->firstName(),
                 'lastName'  => $faker->lastName(),
                 'email'     => $this->validEmailAddress,
-                'password'  => ''
+                'password'  => '',
             ]
         );
+
         $user = $I->grabEntityFromRepository(
             User::class,
             [
-                'email' => $this->validEmailAddress
+                'email' => $this->validEmailAddress,
             ]
         );
+
         $user->setPassword($hasher->hashPassword($user, $this->validPassword));
     }
 
@@ -43,14 +46,14 @@ class LoginCest {
             '/login',
             [
                 'emailAddress' => $this->validEmailAddress,
-                'password'     => $this->validPassword
+                'password'     => $this->validPassword,
             ]
         );
 
         $I->seeResponseCodeIs(HttpCode::OK);
         $I->seeResponseMatchesJsonType(
             [
-                'token' => 'string:!empty'
+                'token' => 'string:!empty',
             ]
         );
     }
@@ -64,15 +67,16 @@ class LoginCest {
             '/login',
             [
                 'emailAddress' => $this->validEmailAddress,
-                'password'     => $this->validPassword
+                'password'     => $this->validPassword,
             ]
         );
+
         $token = $I->grabDataFromResponseByJsonPath('token')[0];
         $I->seeInRepository(
             User::class,
             [
-                'email'    => $this->validEmailAddress,
-                'apiToken' => $token
+                'email' => $this->validEmailAddress,
+                'apiToken' => $token,
             ]
         );
     }
@@ -83,12 +87,14 @@ class LoginCest {
             '/login',
             [
                 'emailAddress' => $this->validEmailAddress,
-                'password'     => 'ThisPasswordIsInvalid...'
+                'password'     => 'ThisPasswordIsInvalid...',
             ]
         );
-        $I->seeResponseCodeIs(HttpCode::UNAUTHORIZED);
-        $I->seeResponseContains('"error":"Invalid login credentials provided"');
 
+        $I->seeJSONResponseWithCodeAndContent(
+            HttpCode::UNAUTHORIZED,
+            '"error":"Invalid login credentials provided"'
+        );
     }
 
     public function loginWithUnknownEmailAddressAndFail(ApiTester $I) {
@@ -97,11 +103,13 @@ class LoginCest {
             '/login',
             [
                 'emailAddress' => 'unknown@test.com',
-                'password'     => $this->validPassword
+                'password'     => $this->validPassword,
             ]
         );
-        $I->seeResponseCodeIs(HttpCode::UNAUTHORIZED);
-        $I->seeResponseContains('"error":"Invalid login credentials provided"');
 
+        $I->seeJSONResponseWithCodeAndContent(
+            HttpCode::UNAUTHORIZED,
+            '"error":"Invalid login credentials provided"'
+        );
     }
 }

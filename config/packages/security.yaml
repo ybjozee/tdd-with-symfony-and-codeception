@@ -14,6 +14,8 @@ security:
         main:
             lazy: true
             provider: users_in_memory
+            entry_point: App\Security\AuthenticationEntryPoint
+            custom_authenticator: App\Security\APITokenAuthenticator
 
             # activate different ways to authenticate
             # https://symfony.com/doc/current/security.html#firewalls-authentication
@@ -24,5 +26,6 @@ security:
     # Easy way to control access for large sections of your site
     # Note: Only the *first* access control that matches will be used
     access_control:
-        # - { path: ^/admin, roles: ROLE_ADMIN }
-        # - { path: ^/profile, roles: ROLE_USER }
+        - { path: ^/register, roles: PUBLIC_ACCESS }
+        - { path: ^/login, roles: PUBLIC_ACCESS }
+        - { path: ^/transfer, roles: IS_AUTHENTICATED_FULLY }

@@ -7,21 +7,21 @@ use App\Exception\AuthenticationException;
 use App\Exception\ParameterNotFoundException;
 use App\Repository\UserRepository;
 use Doctrine\ORM\EntityManagerInterface;
-use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 use Symfony\Component\Routing\Annotation\Route;
 
-class AuthenticationController extends AbstractController {
+class AuthenticationController extends BaseController {
 
     /**
      * @Route("/register", name="register", methods={"POST"})
+     * @throws ParameterNotFoundException
      */
     public function register(
-        Request $request,
-        EntityManagerInterface $em,
+        Request                     $request,
+        EntityManagerInterface      $em,
         UserPasswordHasherInterface $passwordHasher
     )
     : JsonResponse {
@@ -43,39 +43,28 @@ class AuthenticationController extends AbstractController {
 
         return $this->json(
             [
-                'message' => 'Account created successfully'
+                'message' => 'Account created successfully',
             ],
             Response::HTTP_CREATED
         );
     }
 
-    private function getRequiredParameter(
-        string $parameterName,
-        array $requestBody,
-        string $errorMessage
-    ) {
-
-        if (!isset($requestBody[$parameterName])) {
-            throw new ParameterNotFoundException($errorMessage);
-        }
-
-        return $requestBody[$parameterName];
-    }
-
     /**
      * @Route("/login", name="login", methods={"POST"})
+     * @throws ParameterNotFoundException|AuthenticationException
      */
     public function login(
-        Request $request,
-        UserRepository $userRepository,
-        EntityManagerInterface $em,
+        Request                     $request,
+        UserRepository              $userRepository,
+        EntityManagerInterface      $em,
         UserPasswordHasherInterface $passwordHasher
-    ) {
+    )
+    : JsonResponse {
 
         $requestBody = $request->request->all();
 
-        $emailAddress = $requestBody['emailAddress'];
-        $password = $requestBody['password'];
+        $emailAddress = $this->getRequiredParameter('emailAddress', $requestBody, 'Email address is required');
+        $password = $this->getRequiredParameter('password', $requestBody, 'Password is required');
 
         $user = $userRepository->findOneBy(['email' => $emailAddress]);
 
@@ -90,9 +79,8 @@ class AuthenticationController extends AbstractController {
 
         return $this->json(
             [
-                'token' => $apiToken
+                'token' => $apiToken,
             ]
         );
     }
-
 }

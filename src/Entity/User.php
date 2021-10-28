@@ -50,6 +50,11 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface {
      */
     private ?string $apiToken;
 
+    /**
+     * @ORM\OneToOne(targetEntity=Wallet::class, mappedBy="user", cascade={"persist", "remove"})
+     */
+    private Wallet $wallet;
+
     public function __construct(
         string $firstName,
         string $lastName,
@@ -59,6 +64,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface {
         $this->email = $email;
         $this->firstName = $firstName;
         $this->lastName = $lastName;
+        $this->wallet = new Wallet($this);
     }
 
     public function getId()
@@ -200,5 +206,11 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface {
         $this->apiToken = $apiToken;
 
         return $this;
+    }
+
+    public function getWallet()
+    : Wallet {
+
+        return $this->wallet;
     }
 }

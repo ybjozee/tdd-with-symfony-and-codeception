@@ -3,6 +3,7 @@
 namespace App\Tests\api;
 
 use App\Entity\User;
+use App\Entity\Wallet;
 use App\Tests\ApiTester;
 use Codeception\Util\HttpCode;
 use Faker\Factory;
@@ -28,20 +29,34 @@ class RegistrationCest {
                 'firstName'    => $firstName,
                 'lastName'     => $lastName,
                 'emailAddress' => $emailAddress,
-                'password'     => $this->faker->password()
+                'password'     => $this->faker->password(),
             ]
         );
-        $I->seeResponseCodeIs(HttpCode::CREATED);
-        $I->seeResponseIsJson();
-        $I->seeResponseContains('"message":"Account created successfully"');
+
+        $I->seeJSONResponseWithCodeAndContent(
+            HttpCode::CREATED,
+            '"message":"Account created successfully"'
+        );
+
         $I->seeInRepository(
             User::class,
             [
                 'firstName' => $firstName,
                 'lastName'  => $lastName,
-                'email'     => $emailAddress
+                'email'     => $emailAddress,
+                'wallet'    => [
+                    'balance' => 1000,
+                ],
             ]
         );
+
+        $I->seeInRepository(Wallet::class, [
+            'balance' => 1000,
+            'user'    => [
+                'email' => $emailAddress,
+            ],
+        ]);
+
     }
 
     public function registerWithoutFirstNameAndFail(ApiTester $I) {
@@ -51,12 +66,14 @@ class RegistrationCest {
             [
                 'lastName'     => $this->faker->lastName(),
                 'emailAddress' => $this->faker->email(),
-                'password'     => $this->faker->password()
+                'password'     => $this->faker->password(),
             ]
         );
-        $I->seeResponseCodeIs(HttpCode::BAD_REQUEST);
-        $I->seeResponseIsJson();
-        $I->seeResponseContains('"error":"First name is required"');
+
+        $I->seeJSONResponseWithCodeAndContent(
+            HttpCode::BAD_REQUEST,
+            '"error":"First name is required"'
+        );
     }
 
     public function registerWithoutLastNameAndFail(ApiTester $I) {
@@ -66,12 +83,14 @@ class RegistrationCest {
             [
                 'firstName'    => $this->faker->firstName(),
                 'emailAddress' => $this->faker->email(),
-                'password'     => $this->faker->password()
+                'password'     => $this->faker->password(),
             ]
         );
-        $I->seeResponseCodeIs(HttpCode::BAD_REQUEST);
-        $I->seeResponseIsJson();
-        $I->seeResponseContains('"error":"Last name is required"');
+
+        $I->seeJSONResponseWithCodeAndContent(
+            HttpCode::BAD_REQUEST,
+            '"error":"Last name is required"'
+        );
     }
 
     public function registerWithoutEmailAddressAndFail(ApiTester $I) {
@@ -81,12 +100,14 @@ class RegistrationCest {
             [
                 'firstName' => $this->faker->firstName(),
                 'lastName'  => $this->faker->lastName(),
-                'password'  => $this->faker->password()
+                'password'  => $this->faker->password(),
             ]
         );
-        $I->seeResponseCodeIs(HttpCode::BAD_REQUEST);
-        $I->seeResponseIsJson();
-        $I->seeResponseContains('"error":"Email address is required"');
+
+        $I->seeJSONResponseWithCodeAndContent(
+            HttpCode::BAD_REQUEST,
+            '"error":"Email address is required"'
+        );
     }
 
     public function registerWithoutPasswordAndFail(ApiTester $I) {
@@ -99,9 +120,11 @@ class RegistrationCest {
                 'emailAddress' => $this->faker->email(),
             ]
         );
-        $I->seeResponseCodeIs(HttpCode::BAD_REQUEST);
-        $I->seeResponseIsJson();
-        $I->seeResponseContains('"error":"Password is required"');
+
+        $I->seeJSONResponseWithCodeAndContent(
+            HttpCode::BAD_REQUEST,
+            '"error":"Password is required"'
+        );
     }
 
     public function registerUserAndEnsurePasswordIsHashed(ApiTester $I) {
@@ -115,19 +138,18 @@ class RegistrationCest {
                 'firstName'    => $this->faker->firstName(),
                 'lastName'     => $this->faker->lastName(),
                 'emailAddress' => $emailAddress,
-                'password'     => $password
+                'password'     => $password,
             ]
         );
 
         $user = $I->grabEntityFromRepository(
             User::class,
             [
-                'email' => $emailAddress
+                'email' => $emailAddress,
             ]
         );
 
         $hasher = $I->grabService('security.user_password_hasher');
         $I->assertTrue($hasher->isPasswordValid($user, $password));
     }
-
 }
