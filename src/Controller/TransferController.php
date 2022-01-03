@@ -2,10 +2,11 @@
 
 namespace App\Controller;
 
+use App\Exception\InsufficientFundsException;
 use App\Exception\InvalidParameterException;
 use App\Exception\ParameterNotFoundException;
 use App\Repository\UserRepository;
-use Doctrine\ORM\EntityManagerInterface;
+use App\Service\TransferService;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -15,18 +16,16 @@ class TransferController extends BaseController {
 
     /**
      * @Route("/transfer", name="transfer", methods={"POST"})
-     * @throws ParameterNotFoundException|InvalidParameterException
+     * @throws ParameterNotFoundException|InvalidParameterException|InsufficientFundsException
      */
     public function transfer(
-        Request                $request,
-        UserRepository         $userRepository,
-        EntityManagerInterface $em
+        Request         $request,
+        UserRepository  $userRepository,
+        TransferService $transferService
     )
     : JsonResponse {
 
         $sender = $this->getUser();
-        $senderWallet = $sender->getWallet();
-
         $requestBody = $request->request->all();
 
         $recipientEmailAddress = $this->getRequiredParameter(
@@ -35,24 +34,10 @@ class TransferController extends BaseController {
             'Recipient is required'
         );
 
-        $transferAmount = $this->getRequiredParameter(
-            'amount',
-            $requestBody,
-            'Amount is required'
-        );
-
         $transferAmount = $this->getRequiredNonNegativeNumber(
             'amount',
             $requestBody,
         );
-
-        if ($transferAmount > $senderWallet->getBalance()) {
-            return new JsonResponse(
-                [
-                    'error' => 'Insufficient funds available to complete this request',
-                ], Response::HTTP_BAD_REQUEST
-            );
-        }
 
         $recipient = $userRepository->findOneBy(
             [
@@ -68,14 +53,7 @@ class TransferController extends BaseController {
             );
         }
 
-        $recipientWallet = $recipient->getWallet();
-
-        $senderWallet->debit($transferAmount);
-        $recipientWallet->credit($transferAmount);
-
-        $em->persist($senderWallet);
-        $em->persist($recipientWallet);
-        $em->flush();
+        $transferService->transfer($sender, $recipient, $transferAmount);
 
         return $this->json(
             [

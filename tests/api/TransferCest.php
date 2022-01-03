@@ -2,6 +2,7 @@
 
 namespace App\Tests\api;
 
+use App\Entity\TransactionRecord;
 use App\Entity\Wallet;
 use App\Tests\ApiTester;
 use Codeception\Util\HttpCode;
@@ -44,6 +45,20 @@ class TransferCest {
         $I->seeInRepository(Wallet::class, [
             'user'    => $recipient,
             'balance' => $recipientWalletBalance + $amountToTransfer,
+        ]);
+
+        $I->seeInRepository(TransactionRecord::class, [
+            'sender' => $authenticatedUser,
+            'recipient' => $recipient,
+            'amount' => $amountToTransfer,
+            'isCredit' => true
+        ]);
+
+        $I->seeInRepository(TransactionRecord::class, [
+            'sender' => $authenticatedUser,
+            'recipient' => $recipient,
+            'amount' => $amountToTransfer,
+            'isCredit' => false
         ]);
     }
 

@@ -34,28 +34,10 @@ class Wallet {
         $this->user = $user;
     }
 
-    public function getId()
-    : ?int {
-
-        return $this->id;
-    }
-
     public function getBalance()
     : float {
 
         return $this->balance;
-    }
-
-    public function setBalance(float $balance)
-    : void {
-
-        $this->balance = $balance;
-    }
-
-    public function getUser()
-    : User {
-
-        return $this->user;
     }
 
     public function credit(float $amount)
