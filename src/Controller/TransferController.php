@@ -2,6 +2,7 @@
 
 namespace App\Controller;
 
+use App\Entity\User;
 use App\Exception\InsufficientFundsException;
 use App\Exception\InvalidParameterException;
 use App\Exception\ParameterNotFoundException;
@@ -24,7 +25,7 @@ class TransferController extends BaseController {
         TransferService $transferService
     )
     : JsonResponse {
-
+        /** @var $sender User */
         $sender = $this->getUser();
         $requestBody = $request->request->all();
 
